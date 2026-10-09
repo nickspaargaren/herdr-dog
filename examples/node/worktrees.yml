@@ -1,0 +1,9 @@
+version: 1
+
+worktrees:
+  setup:
+    - name: Copy environment
+      run: cp "$HERDR_MAIN_WORKTREE/.env" .env
+
+    - name: Install dependencies
+      run: pnpm install
