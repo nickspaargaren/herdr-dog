@@ -19,6 +19,9 @@ func TestBinaryInstaller(t *testing.T) {
 		{"macOS x86-64", "Darwin", "x86_64", "", ""},
 		{"Linux ARM64", "Linux", "aarch64", "", ""},
 		{"Linux x86-64", "Linux", "x86_64", "", ""},
+		{"shasum fallback without Go", "Darwin", "arm64", "shasum", ""},
+		{"missing checksum tool", "Linux", "x86_64", "no-checksum", "sha256sum or shasum is required"},
+		{"invalid manifest version", "Linux", "x86_64", "version", "manifest version must be MAJOR.MINOR.PATCH"},
 		{"unsupported OS", "Windows", "x86_64", "", "unsupported operating system"},
 		{"unsupported arch", "Linux", "riscv64", "", "unsupported architecture"},
 		{"failed binary download", "Linux", "x86_64", "download", "cannot download herdr-dog_linux_amd64"},
@@ -34,6 +37,9 @@ func TestBinaryInstaller(t *testing.T) {
 			script := filepath.Join(root, "scripts", "install-binary")
 			writeFile(t, script, installer)
 			writeFile(t, filepath.Join(root, "herdr-plugin.toml"), "version = \"0.1.0\"\n")
+			if test.failure == "version" {
+				writeFile(t, filepath.Join(root, "herdr-plugin.toml"), "version = \"invalid\"\n")
+			}
 			writeFile(t, filepath.Join(root, "bin", "herdr-dog"), "previous binary")
 			writeFile(t, filepath.Join(tools, "uname"), "#!/bin/sh\ncase $1 in\n-s) printf '%s\\n' \"$TEST_OS\";;\n-m) printf '%s\\n' \"$TEST_ARCH\";;\nesac\n")
 			// Fake only the HTTP transport and platform detection. The real SHA-256
@@ -87,9 +93,30 @@ esac
 				checksums += line
 			}
 			writeFile(t, filepath.Join(root, "SHA256SUMS"), checksums)
+			path := tools + ":" + os.Getenv("PATH")
+			if test.failure == "shasum" || test.failure == "no-checksum" {
+				// A controlled PATH also proves installation does not invoke Go.
+				path = tools
+				required := []string{"awk", "dirname", "mkdir", "mktemp", "cp", "rm", "chmod", "mv"}
+				if test.failure == "shasum" {
+					required = append(required, "shasum")
+				}
+				for _, name := range required {
+					actual, err := exec.LookPath(name)
+					if err != nil {
+						if name == "shasum" {
+							t.Skip("shasum not available; native checksum utility is tested separately")
+						}
+						t.Fatal(err)
+					}
+					if err := os.Symlink(actual, filepath.Join(tools, name)); err != nil {
+						t.Fatal(err)
+					}
+				}
+			}
 			cmd := exec.Command("/bin/sh", script)
 			cmd.Dir = "/" // Installation must not depend on the caller's directory.
-			cmd.Env = append(os.Environ(), "PATH="+tools+":"+os.Getenv("PATH"),
+			cmd.Env = append(os.Environ(), "PATH="+path,
 				"TEST_ROOT="+root, "TEST_OS="+test.os, "TEST_ARCH="+test.arch, "TEST_FAILURE="+test.failure)
 			output, err := cmd.CombinedOutput()
 			if test.want != "" {
