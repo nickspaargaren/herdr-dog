@@ -27,23 +27,33 @@ type step struct {
 var envName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 func loadConfig(worktree string) (*config, error) {
-	path, err := filepath.EvalSymlinks(filepath.Join(worktree, configPath))
+	source := filepath.Join(worktree, configPath)
+	// Only an absent config permits fallback; a dangling symlink is an error.
+	_, err := os.Lstat(source)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("cannot access %s: %w", configPath, err)
+		return nil, fmt.Errorf("cannot access %s: %w", source, err)
+	}
+	path, err := filepath.EvalSymlinks(source)
+	if err != nil {
+		return nil, fmt.Errorf("cannot resolve %s: %w", source, err)
 	}
 	rel, err := filepath.Rel(worktree, path)
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-		return nil, fmt.Errorf("%s must resolve inside the new worktree", configPath)
+		return nil, fmt.Errorf("%s must resolve inside its checkout %s", source, worktree)
 	}
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("cannot read %s: %w", configPath, err)
+		return nil, fmt.Errorf("cannot read %s: %w", source, err)
 	}
 	defer file.Close()
-	return parseConfig(file)
+	result, err := parseConfig(file)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", source, err)
+	}
+	return result, nil
 }
 
 // Inspect YAML nodes so scalars are not silently coerced into strings or ints.

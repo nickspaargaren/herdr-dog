@@ -89,14 +89,79 @@ func (f fixture) event(t *testing.T, includeBranch bool) string {
 
 func TestMissingConfigIsSilent(t *testing.T) {
 	f := newFixture(t, "", "feature")
-	// A config existing only in the main checkout must not be loaded.
-	writeFile(t, filepath.Join(f.main, configPath), "version: 99")
 	var stdout, stderr bytes.Buffer
 	if err := HandleEvent(f.event(t, true), &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
 	if stdout.Len() != 0 || stderr.Len() != 0 {
 		t.Fatalf("unexpected output: %q / %q", stdout.String(), stderr.String())
+	}
+}
+
+func TestMainCheckoutConfigFallback(t *testing.T) {
+	for _, ignored := range []bool{false, true} {
+		t.Run(map[bool]string{false: "untracked", true: "gitignored"}[ignored], func(t *testing.T) {
+			f := newFixture(t, "", "local-config")
+			if ignored {
+				writeFile(t, filepath.Join(f.main, ".gitignore"), ".herdr/\n")
+			}
+			writeFile(t, filepath.Join(f.main, configPath), "version: 1\nworktrees:\n  setup:\n    - run: cp \"$HERDR_MAIN_WORKTREE/.env\" .env\n")
+			writeFile(t, filepath.Join(f.main, ".env"), "LOCAL=fixture\n")
+			var stdout, stderr bytes.Buffer
+			if err := HandleEvent(f.event(t, true), &stdout, &stderr); err != nil {
+				t.Fatal(err)
+			}
+			if got := readFile(t, filepath.Join(f.worktree, ".env")); got != "LOCAL=fixture\n" {
+				t.Fatalf("unexpected copy: %q", got)
+			}
+			if _, err := os.Lstat(filepath.Join(f.worktree, configPath)); !os.IsNotExist(err) {
+				t.Fatal("fallback must not copy configuration into the new checkout")
+			}
+		})
+	}
+}
+
+func TestNewCheckoutConfigPrecedence(t *testing.T) {
+	f := newFixture(t, "version: 1\nworktrees: {setup: []}\n", "precedence")
+	writeFile(t, filepath.Join(f.main, configPath), "version: 99")
+	var stdout, stderr bytes.Buffer
+	if err := HandleEvent(f.event(t, true), &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestInvalidConfigDoesNotFallBack(t *testing.T) {
+	f := newFixture(t, "version: 1\nworktrees: {setup: []}\n", "invalid-local")
+	writeFile(t, filepath.Join(f.worktree, configPath), "version: 99")
+	var stdout, stderr bytes.Buffer
+	err := HandleEvent(f.event(t, true), &stdout, &stderr)
+	if err == nil || !strings.Contains(err.Error(), filepath.Join(f.worktree, configPath)) || !strings.Contains(err.Error(), "unsupported config version") {
+		t.Fatalf("expected new checkout validation error, got %v", err)
+	}
+}
+
+func TestInvalidFallbackConfig(t *testing.T) {
+	f := newFixture(t, "", "invalid-fallback")
+	writeFile(t, filepath.Join(f.main, configPath), "version: 99")
+	var stdout, stderr bytes.Buffer
+	err := HandleEvent(f.event(t, true), &stdout, &stderr)
+	if err == nil || !strings.Contains(err.Error(), filepath.Join(f.main, configPath)) {
+		t.Fatalf("expected main checkout validation error, got %v", err)
+	}
+}
+
+func TestDanglingConfigSymlinkDoesNotFallBack(t *testing.T) {
+	f := newFixture(t, "version: 1\nworktrees: {setup: []}\n", "dangling")
+	path := filepath.Join(f.worktree, configPath)
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(f.worktree, "missing.yml"), path); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	if err := HandleEvent(f.event(t, true), &stdout, &stderr); err == nil || !strings.Contains(err.Error(), "cannot resolve") {
+		t.Fatalf("expected dangling symlink error, got %v", err)
 	}
 }
 
@@ -234,8 +299,24 @@ func TestConfigSymlinkContainment(t *testing.T) {
 			if err := os.Symlink(target, link); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := loadConfig(f.worktree); err == nil || !strings.Contains(err.Error(), "must resolve inside") {
+			var stdout, stderr bytes.Buffer
+			if err := HandleEvent(f.event(t, true), &stdout, &stderr); err == nil || !strings.Contains(err.Error(), "must resolve inside") {
 				t.Fatalf("got %v, want containment error", err)
+			}
+			if err := os.Remove(link); err != nil {
+				t.Fatal(err)
+			}
+			mainLink := filepath.Join(f.main, configPath)
+			if directory {
+				mainLink = filepath.Join(f.main, ".herdr")
+			} else if err := os.MkdirAll(filepath.Dir(mainLink), 0755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(target, mainLink); err != nil {
+				t.Fatal(err)
+			}
+			if err := HandleEvent(f.event(t, true), &stdout, &stderr); err == nil || !strings.Contains(err.Error(), "must resolve inside") {
+				t.Fatalf("got %v, want fallback containment error", err)
 			}
 		})
 	}
