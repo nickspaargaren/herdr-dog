@@ -9,20 +9,10 @@ Commit the file or keep it locally in the main checkout, including gitignored fi
 ## Installation
 
 Requires **Herdr 0.9.3+**, **Git 2.36+**, and **macOS or Linux** (ARM64 or x86-64).
-Installation uses `/bin/sh`, `curl`, standard Unix utilities, and `sha256sum` or
-`shasum` for checksum verification. **Users do not need Go.** Project commands
-also require their own tools, such as `pnpm`.
 
 ```sh
 herdr plugin install nickspaargaren/herdr-dog
 ```
-
-Herdr clones the repository and runs the manifest's installer script. It downloads
-the matching prebuilt binary from the exact GitHub release named by the manifest's
-version, verifies SHA-256, and installs it as `bin/herdr-dog`. Downloads happen only
-at installation, never when creating a worktree. Installation is global to your
-user. Add `--yes` for a noninteractive installation, or `--ref v0.2.0` to pin a
-released version. The corresponding release assets must already be published.
 
 ### Dotfiles and local linking
 
@@ -93,13 +83,13 @@ worktrees:
         NODE_ENV: development
 ```
 
-| Field | Required | Meaning |
-| --- | --- | --- |
-| `version` | Yes | Integer `1`; other versions are rejected. |
-| `worktrees.setup` | Yes | Ordered list of steps; `[]` is a valid no-op. |
-| `run` | Each step | Nonempty shell command string. |
-| `name` | No | Step label used in progress and failure messages. Defaults to `run`. |
-| `env` | No | Environment variable names mapped to string values, for this step only. Quote numbers and booleans. |
+| Field             | Required  | Meaning                                                                                             |
+| ----------------- | --------- | --------------------------------------------------------------------------------------------------- |
+| `version`         | Yes       | Integer `1`; other versions are rejected.                                                           |
+| `worktrees.setup` | Yes       | Ordered list of steps; `[]` is a valid no-op.                                                       |
+| `run`             | Each step | Nonempty shell command string.                                                                      |
+| `name`            | No        | Step label used in progress and failure messages. Defaults to `run`.                                |
+| `env`             | No        | Environment variable names mapped to string values, for this step only. Quote numbers and booleans. |
 
 The entire file is validated before any command runs. Unknown fields, duplicate
 keys, incorrect types, multiple YAML documents, aliases, and merge keys are
@@ -135,11 +125,11 @@ directory inside a step do not carry over to later steps. Filesystem changes do.
 
 Dog provides these to each setup command; they are **not assumed Herdr variables**:
 
-| Variable | Value |
-| --- | --- |
-| `HERDR_WORKTREE` | Absolute, symlink-resolved path to the newly created checkout. |
+| Variable              | Value                                                           |
+| --------------------- | --------------------------------------------------------------- |
+| `HERDR_WORKTREE`      | Absolute, symlink-resolved path to the newly created checkout.  |
 | `HERDR_MAIN_WORKTREE` | Absolute, symlink-resolved path to Git's primary/main checkout. |
-| `HERDR_BRANCH` | New worktree's branch name; empty for detached HEAD. |
+| `HERDR_BRANCH`        | New worktree's branch name; empty for detached HEAD.            |
 
 These values override inherited or step-defined values of the same names.
 The main checkout means Git's original checkout, regardless of its branch name.
