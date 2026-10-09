@@ -50,6 +50,9 @@ func HandleEvent(raw string, stdout, stderr io.Writer) error {
 		return err
 	}
 	config, err := loadConfig(checkout.Worktree)
+	if err == nil && config == nil && checkout.Main != checkout.Worktree {
+		config, err = loadConfig(checkout.Main)
+	}
 	if err != nil || config == nil {
 		return err
 	}

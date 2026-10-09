@@ -15,12 +15,13 @@ or manual asset upload is required.
   selects the manifest's exact version, not GitHub's latest release.
 - Published versions and tags are immutable. Ship fixes as a new version.
 
-## First release
+## Version 0.2.0
 
-After the implementation PR is merged and CI is green on `main`, tag **v0.1.0**
-using the steps below. The manifest already declares `0.1.0`, so no version bump
-is needed for the first release. Download-based installation cannot work until
-this first release is published. Developers can build and link source meanwhile.
+This release adds main-checkout configuration fallback, supporting untracked and
+gitignored `.herdr/worktrees.yml` files. The YAML format remains `version: 1`.
+After merging and passing CI, publish `v0.2.0` using the steps below. Until its
+assets are published, developers can build and link source, and users can pin
+the previously published `v0.1.0` release.
 
 ## Release a new version
 

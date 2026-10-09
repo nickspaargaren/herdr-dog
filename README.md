@@ -3,13 +3,14 @@
 [Herdr](https://herdr.dev) manages the herd. Dog gets each worktree ready to work.
 
 **Run project-defined setup commands after Herdr creates a worktree.**
-Install Dog once, globally. Each project opts in by committing
-`.herdr/worktrees.yml`. The plugin contains no project-specific configuration.
+Install Dog once, globally. Each project opts in with `.herdr/worktrees.yml`,
+either committed or kept locally in the main checkout (including gitignored
+files). The plugin contains no project-specific configuration.
 
 ```text
 Herdr creates a Git worktree
   → worktree.created
-  → Herdr Dog reads .herdr/worktrees.yml
+  → Herdr Dog reads .herdr/worktrees.yml from the new checkout or main checkout
   → worktrees.setup runs inside the new checkout
 ```
 
@@ -28,7 +29,7 @@ Herdr clones the repository and runs the manifest's installer script. It downloa
 the matching prebuilt binary from the exact GitHub release named by the manifest's
 version, verifies SHA-256, and installs it as `bin/herdr-dog`. Downloads happen only
 at installation, never when creating a worktree. Installation is global to your
-user. Add `--yes` for a noninteractive installation, or `--ref v0.1.0` to pin a
+user. Add `--yes` for a noninteractive installation, or `--ref v0.2.0` to pin a
 released version. The corresponding release assets must already be published.
 
 ### Dotfiles and local linking
@@ -52,7 +53,7 @@ To remove a managed installation: `herdr plugin uninstall herdr-dog`.
 
 ## Quick start
 
-Commit this as `.herdr/worktrees.yml` in your project:
+Save this as `.herdr/worktrees.yml` in your project's main checkout:
 
 ```yaml
 version: 1
@@ -65,6 +66,10 @@ worktrees:
 Create a worktree through Herdr. Dog copies `.env` from the main checkout into
 the new checkout. The main checkout must already have that file.
 
+Commit `.herdr/worktrees.yml` to share setup with your team, or keep it untracked
+and optionally add `.herdr/worktrees.yml` to `.gitignore` for local-only setup.
+When the new checkout has no configuration, Dog reads the main checkout's file.
+
 For more complex projects, delegate to a project-owned script:
 
 ```yaml
@@ -75,7 +80,8 @@ worktrees:
     - run: ./scripts/worktree-setup
 ```
 
-Commit the script too, with executable permission and an appropriate shebang.
+Commit the script too, with executable permission and an appropriate shebang,
+so it is available in the new checkout even when the configuration is local-only.
 
 ## Configuration reference
 
@@ -107,9 +113,15 @@ The entire file is validated before any command runs. Unknown fields, duplicate
 keys, incorrect types, multiple YAML documents, aliases, and merge keys are
 rejected. Error step indexes are zero-based (`setup[1]` is the second step).
 
-Configuration is read **from the new checkout**, so it follows the checked-out
-branch. Dog does not search parent directories or fall back to another checkout.
-Configuration symlinks must resolve inside the new checkout.
+Configuration is read **from the new checkout first**, so committed configuration
+follows the checked-out branch. If that file is absent, Dog falls back to
+`.herdr/worktrees.yml` in Git's primary/main checkout, allowing untracked or
+gitignored local configuration. The new checkout's file takes precedence, even
+when its setup list is empty. Invalid, unreadable, or dangling-symlink
+configuration is an error and does not trigger fallback. Dog does not search
+parent directories, merge configurations, or copy the fallback file.
+Configuration symlinks must resolve inside the checkout supplying the file.
+Setup commands always run in the new checkout, regardless of the config source.
 
 This intentionally small v1 format has no conditions, retries, parallel steps,
 dependencies, templating, teardown, or other lifecycle hooks. Put project logic
@@ -162,7 +174,7 @@ its name in `.worktree-database`. Ignore that generated file in your project.
 
 ## Errors and failure behavior
 
-A checkout without `.herdr/worktrees.yml` exits successfully without output.
+When neither checkout has `.herdr/worktrees.yml`, Dog exits successfully without output.
 Otherwise Dog writes one short progress line per step and forwards each command's
 stdout/stderr. A nonzero shell exit stops execution immediately. Dog itself exits
 nonzero on configuration, discovery, or command failure.
@@ -194,7 +206,9 @@ environment, and have normal access to your files and tools. Review repositories
 and the branches you create worktrees from before using them.
 
 Dog does not sandbox commands or manage project trust. It does not load executable
-configuration from outside the new checkout.
+configuration from outside the new checkout or Git's primary/main checkout.
+Local configuration in the main checkout can therefore run for branches without
+their own configuration.
 
 ## Development and testing
 
