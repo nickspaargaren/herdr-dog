@@ -212,9 +212,6 @@ their own configuration.
 
 ## Development and testing
 
-Go is a good fit here: a standalone binary, standard-library Git/subprocess
-handling, and one Go dependency,
-[`go.yaml.in/yaml/v3`](https://github.com/yaml/go-yaml), for YAML parsing.
 Developers need **Go 1.22+**. To run current source instead of a released binary,
 build it yourself before linking:
 
@@ -225,24 +222,7 @@ go build -o bin/herdr-dog ./cmd/herdr-dog
 herdr plugin link /absolute/path/to/herdr-dog
 ```
 
-Tests use temporary Git repositories and real `/bin/sh` subprocesses; a running
-Herdr instance is not required. They cover configuration validation, event parsing,
-checkout discovery, command order and failure, environment isolation, output,
-unusual paths/branch names, detached HEAD, and configuration path containment.
-Installer tests use fake downloads and real SHA-256 verification; they do not
-access GitHub or require a published release.
-CI runs the tests, vet, and build on macOS and Linux with Go 1.22 and stable Go.
-It also builds all four release binaries and verifies their checksums.
-
-The integration was verified against [Herdr's plugin docs](https://herdr.dev/docs/plugins/)
-and the v0.9.3 sources for [event serialization](https://github.com/herdrdev/herdr/blob/v0.9.3/src/api/schema/events.rs),
-[worktree fields](https://github.com/herdrdev/herdr/blob/v0.9.3/src/api/schema/worktrees.rs),
-and [hook execution](https://github.com/herdrdev/herdr/blob/v0.9.3/src/app/api/plugins/runtime.rs).
-Herdr supplies `HERDR_PLUGIN_EVENT_JSON` with `event: "worktree_created"` and
-`data.type: "worktree_created"`, even though the manifest hook uses
-`worktree.created`. Dog reads `data.worktree.path` and its optional branch, then
-uses `git worktree list --porcelain -z` to discover the main checkout. When the
-branch is absent, Git's `branch --show-current` supplies it.
+Tests require neither a running Herdr instance nor GitHub access.
 
 ## Releasing
 
