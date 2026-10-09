@@ -15,31 +15,36 @@ Herdr creates a Git worktree
 
 ## Installation
 
-Requires **Herdr 0.9.3+**, **Go 1.22+** to build, **Git 2.36+**, and **macOS or
-Linux** with `/bin/sh`. Project commands also require their own tools, such as
-`pnpm`. Go is not required at runtime after the binary has been built.
+Requires **Herdr 0.9.3+**, **Git 2.36+**, and **macOS or Linux** (ARM64 or x86-64).
+Installation uses `/bin/sh`, `curl`, standard Unix utilities, and `sha256sum` or
+`shasum` for checksum verification. **Users do not need Go.** Project commands
+also require their own tools, such as `pnpm`.
 
 ```sh
 herdr plugin install nickspaargaren/herdr-dog
 ```
 
-Herdr clones the repository and runs the manifest's Go build command before
-registering the plugin. Installation is global to your user. Add `--yes` for a
-noninteractive installation, or `--ref <tag-or-commit>` to pin a revision.
+Herdr clones the repository and runs the manifest's installer script. It downloads
+the matching prebuilt binary from the exact GitHub release named by the manifest's
+version, verifies SHA-256, and installs it as `bin/herdr-dog`. Downloads happen only
+at installation, never when creating a worktree. Installation is global to your
+user. Add `--yes` for a noninteractive installation, or `--ref v0.1.0` to pin a
+released version. The corresponding release assets must already be published.
 
-### Local development and dotfiles
+### Dotfiles and local linking
 
-Clone anywhere, build in that checkout, then link its absolute path:
+Clone anywhere, download the pinned release binary, then link its absolute path:
 
 ```sh
 git clone https://github.com/nickspaargaren/herdr-dog.git "$HOME/.local/src/herdr-dog"
 cd "$HOME/.local/src/herdr-dog"
-go build -o bin/herdr-dog ./cmd/herdr-dog
+/bin/sh scripts/install-binary
 herdr plugin link "$HOME/.local/src/herdr-dog"
 ```
 
 Herdr's [`plugin link`](https://herdr.dev/docs/plugins/#install-and-link) uses the
-local directory and **does not run build commands**. Rebuild after source changes.
+local directory and **does not run build commands**, so run the installer first.
+After updating the checkout to another release, run the installer again.
 The plugin works independently of where it is cloned or where Herdr is launched.
 
 To unregister a local link: `herdr plugin unlink herdr-dog`.
@@ -194,8 +199,10 @@ configuration from outside the new checkout.
 ## Development and testing
 
 Go is a good fit here: a standalone binary, standard-library Git/subprocess
-handling, and one runtime dependency,
+handling, and one Go dependency,
 [`go.yaml.in/yaml/v3`](https://github.com/yaml/go-yaml), for YAML parsing.
+Developers need **Go 1.22+**. To run current source instead of a released binary,
+build it yourself before linking:
 
 ```sh
 go test ./...
@@ -208,6 +215,8 @@ Tests use temporary Git repositories and real `/bin/sh` subprocesses; a running
 Herdr instance is not required. They cover configuration validation, event parsing,
 checkout discovery, command order and failure, environment isolation, output,
 unusual paths/branch names, detached HEAD, and configuration path containment.
+Installer tests use fake downloads and real SHA-256 verification; they do not
+access GitHub or require a published release.
 CI runs the tests, vet, and build on macOS and Linux with Go 1.22 and stable Go.
 
 The integration was verified against [Herdr's plugin docs](https://herdr.dev/docs/plugins/)

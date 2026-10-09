@@ -6,7 +6,7 @@ description = "Run project-defined setup commands after Herdr creates a worktree
 platforms = ["linux", "macos"]
 
 [[build]]
-command = ["go", "build", "-o", "bin/herdr-dog", "./cmd/herdr-dog"]
+command = ["/bin/sh", "scripts/install-binary"]
 
 [[events]]
 on = "worktree.created"

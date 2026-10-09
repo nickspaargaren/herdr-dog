@@ -1,0 +1,57 @@
+#!/bin/sh
+set -eu
+
+die() { printf 'herdr-dog: %s\n' "$*" >&2; exit 1; }
+root=$(CDPATH= cd "$(dirname "$0")/.." && pwd -P)
+
+case $(uname -s) in
+    Darwin) os=darwin ;;
+    Linux) os=linux ;;
+    *) die "unsupported operating system; supported: macOS and Linux" ;;
+esac
+case $(uname -m) in
+    arm64|aarch64) arch=arm64 ;;
+    x86_64|amd64) arch=amd64 ;;
+    *) die "unsupported architecture; supported: ARM64 and x86-64" ;;
+esac
+
+for tool in awk curl mktemp; do
+    command -v "$tool" >/dev/null 2>&1 || die "$tool is required to install the binary"
+done
+if command -v sha256sum >/dev/null 2>&1; then
+    checksum=sha256sum
+elif command -v shasum >/dev/null 2>&1; then
+    checksum=shasum
+else
+    die "sha256sum or shasum is required to verify the binary"
+fi
+
+# The manifest is the single source of truth for the exact release version.
+# Installation never selects /latest or falls back to building source.
+version=$(awk '$1 == "version" { gsub(/"/, "", $3); print $3; exit }' "$root/herdr-plugin.toml")
+printf '%s\n' "$version" | awk '/^[0-9]+\.[0-9]+\.[0-9]+$/ { ok=1 } END { exit !ok }' || die "manifest version must be MAJOR.MINOR.PATCH"
+asset="herdr-dog_${os}_${arch}"
+url="https://github.com/nickspaargaren/herdr-dog/releases/download/v$version"
+
+# Stage on the same filesystem as bin/herdr-dog so replacing an existing binary
+# is atomic. Failures leave the previous binary untouched.
+mkdir -p "$root/bin"
+tmp=$(mktemp -d "$root/bin/.download.XXXXXX")
+trap 'rm -rf "$tmp"' 0
+trap 'exit 1' HUP INT TERM
+
+curl --fail --location --silent --show-error --proto '=https' --proto-redir '=https' \
+    "$url/$asset" --output "$tmp/$asset" || die "cannot download $asset from release v$version; check that the release is published"
+curl --fail --location --silent --show-error --proto '=https' --proto-redir '=https' \
+    "$url/SHA256SUMS" --output "$tmp/SHA256SUMS" || die "cannot download checksums for release v$version"
+awk -v asset="$asset" '$2 == asset { print; count++ } END { exit count != 1 }' \
+    "$tmp/SHA256SUMS" > "$tmp/checksum" || die "release checksums must contain exactly one entry for $asset"
+
+if [ "$checksum" = sha256sum ]; then
+    (cd "$tmp" && sha256sum --check checksum >/dev/null 2>&1) || die "checksum verification failed for $asset"
+else
+    (cd "$tmp" && shasum -a 256 --check checksum >/dev/null 2>&1) || die "checksum verification failed for $asset"
+fi
+chmod 755 "$tmp/$asset"
+mv -f "$tmp/$asset" "$root/bin/herdr-dog"
+printf 'herdr-dog: installed v%s (%s/%s)\n' "$version" "$os" "$arch"
