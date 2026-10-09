@@ -1,0 +1,27 @@
+#!/bin/sh
+set -eu
+
+# Illustrative PROJECT-OWNED logic, not part of the plugin. Adapt the database
+# connection, migration files, and application configuration to your project.
+# Requires PostgreSQL client tools and a local server permitting createdb.
+: "${HERDR_WORKTREE:?Run through Herdr Dog or set HERDR_WORKTREE}"
+
+# Prefix + ASCII slug + path checksum: a bounded PostgreSQL identifier that
+# distinguishes checkouts whose branch names normalize to the same slug.
+# cksum is portable, not a cryptographic or globally unique identifier.
+label=${HERDR_BRANCH:-$(basename "$HERDR_WORKTREE")}
+slug=$(printf '%s' "$label" | LC_ALL=C tr '[:upper:]' '[:lower:]' | LC_ALL=C tr -cs 'a-z0-9' '_' | cut -c 1-28)
+checksum=$(printf '%s' "$HERDR_WORKTREE" | cksum)
+checksum=${checksum%% *}
+PGDATABASE="wt_${slug:-worktree}_${checksum}"
+export PGDATABASE
+
+# PGHOST, PGPORT, PGUSER, and authentication follow your local PostgreSQL setup.
+# These illustrative SQL filenames must be supplied/replaced by your project.
+createdb "$PGDATABASE"
+psql --dbname="$PGDATABASE" --set=ON_ERROR_STOP=1 --file=./db/migrations.sql
+psql --dbname="$PGDATABASE" --set=ON_ERROR_STOP=1 --file=./db/fixtures.sql
+
+# Save the chosen name for project tooling. Adapt this to how your app reads
+# its connection settings; copying .env alone does not select this database.
+printf '%s\n' "$PGDATABASE" > .worktree-database
