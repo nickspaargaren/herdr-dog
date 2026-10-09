@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+      - run: go test ./...
+      - run: go vet ./...
+      - name: Build pinned release binaries
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: /bin/sh scripts/build-release "$RELEASE_TAG"
+      - name: Publish binaries and checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          assets=(dist/herdr-dog_darwin_amd64 dist/herdr-dog_darwin_arm64
+                  dist/herdr-dog_linux_amd64 dist/herdr-dog_linux_arm64 dist/SHA256SUMS)
+          if draft=$(gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft' 2>/dev/null); then
+            if [ "$draft" != true ]; then
+              printf 'Release %s is already published; use a new version.\n' "$RELEASE_TAG" >&2
+              exit 1
+            fi
+            gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
+          else
+            gh release create "$RELEASE_TAG" "${assets[@]}" --draft --verify-tag \
+              --generate-notes --title "Herdr Dog $RELEASE_TAG"
+          fi
+          gh release edit "$RELEASE_TAG" --draft=false

@@ -24,3 +24,15 @@ jobs:
       - run: go test ./...
       - run: go vet ./...
       - run: go build -o bin/herdr-dog ./cmd/herdr-dog
+      - run: /bin/sh -n scripts/install-binary && /bin/sh -n scripts/build-release
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+      - run: /bin/sh scripts/build-release
+      - run: sha256sum --check SHA256SUMS
+        working-directory: dist
