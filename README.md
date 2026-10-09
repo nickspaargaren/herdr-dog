@@ -208,6 +208,7 @@ Tests use temporary Git repositories and real `/bin/sh` subprocesses; a running
 Herdr instance is not required. They cover configuration validation, event parsing,
 checkout discovery, command order and failure, environment isolation, output,
 unusual paths/branch names, detached HEAD, and configuration path containment.
+CI runs the tests, vet, and build on macOS and Linux with Go 1.22 and stable Go.
 
 The integration was verified against [Herdr's plugin docs](https://herdr.dev/docs/plugins/)
 and the v0.9.3 sources for [event serialization](https://github.com/herdrdev/herdr/blob/v0.9.3/src/api/schema/events.rs),
