@@ -3,16 +3,8 @@
 [Herdr](https://herdr.dev) manages the herd. Dog gets each worktree ready to work.
 
 **Run project-defined setup commands after Herdr creates a worktree.**
-Install Dog once, globally. Each project opts in with `.herdr/worktrees.yml`,
-either committed or kept locally in the main checkout (including gitignored
-files). The plugin contains no project-specific configuration.
-
-```text
-Herdr creates a Git worktree
-  → worktree.created
-  → Herdr Dog reads .herdr/worktrees.yml from the new checkout or main checkout
-  → worktrees.setup runs inside the new checkout
-```
+Install Dog globally, then configure each project with `.herdr/worktrees.yml`.
+Commit the file or keep it locally in the main checkout, including gitignored files.
 
 ## Installation
 
