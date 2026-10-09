@@ -1,0 +1,13 @@
+id = "herdr-dog"
+name = "Herdr Dog"
+version = "0.1.0"
+min_herdr_version = "0.9.3"
+description = "Run project-defined setup commands after Herdr creates a worktree"
+platforms = ["linux", "macos"]
+
+[[build]]
+command = ["go", "build", "-o", "bin/herdr-dog", "./cmd/herdr-dog"]
+
+[[events]]
+on = "worktree.created"
+command = ["./bin/herdr-dog"]
