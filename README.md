@@ -218,8 +218,6 @@ Tests require neither a running Herdr instance nor GitHub access.
 
 ## Releasing
 
-See [RELEASING.md](RELEASING.md) for the first release, version bumps, tagging,
-automatic binary/checksum publication, verification, and failed-release recovery.
-Pushing a tag matching the manifest version triggers the release workflow.
+See [RELEASING.md](RELEASING.md) for release instructions.
 
 Licensed under [MIT](LICENSE).
