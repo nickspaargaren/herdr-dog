@@ -15,7 +15,7 @@ Herdr creates a Git worktree
 
 ## Installation
 
-Requires **Herdr 0.9.3+**, **Go 1.22+** to build, **Git 2.31+**, and **macOS or
+Requires **Herdr 0.9.3+**, **Go 1.22+** to build, **Git 2.36+**, and **macOS or
 Linux** with `/bin/sh`. Project commands also require their own tools, such as
 `pnpm`. Go is not required at runtime after the binary has been built.
 
