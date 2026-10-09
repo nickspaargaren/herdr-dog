@@ -218,6 +218,7 @@ unusual paths/branch names, detached HEAD, and configuration path containment.
 Installer tests use fake downloads and real SHA-256 verification; they do not
 access GitHub or require a published release.
 CI runs the tests, vet, and build on macOS and Linux with Go 1.22 and stable Go.
+It also builds all four release binaries and verifies their checksums.
 
 The integration was verified against [Herdr's plugin docs](https://herdr.dev/docs/plugins/)
 and the v0.9.3 sources for [event serialization](https://github.com/herdrdev/herdr/blob/v0.9.3/src/api/schema/events.rs),
@@ -228,5 +229,11 @@ Herdr supplies `HERDR_PLUGIN_EVENT_JSON` with `event: "worktree_created"` and
 `worktree.created`. Dog reads `data.worktree.path` and its optional branch, then
 uses `git worktree list --porcelain -z` to discover the main checkout. When the
 branch is absent, Git's `branch --show-current` supplies it.
+
+## Releasing
+
+See [RELEASING.md](RELEASING.md) for the first release, version bumps, tagging,
+automatic binary/checksum publication, verification, and failed-release recovery.
+Pushing a tag matching the manifest version triggers the release workflow.
 
 Licensed under [MIT](LICENSE).
