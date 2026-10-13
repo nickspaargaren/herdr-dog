@@ -36,7 +36,7 @@ func TestBinaryInstaller(t *testing.T) {
 			tools := filepath.Join(root, "tools")
 			script := filepath.Join(root, "scripts", "install-binary")
 			writeFile(t, script, installer)
-			writeFile(t, filepath.Join(root, "herdr-plugin.toml"), "version = \"0.3.0\"\n")
+			writeFile(t, filepath.Join(root, "herdr-plugin.toml"), "version = \"0.4.0\"\n")
 			if test.failure == "version" {
 				writeFile(t, filepath.Join(root, "herdr-plugin.toml"), "version = \"invalid\"\n")
 			}
@@ -56,7 +56,7 @@ while [ "$#" -gt 0 ]; do
 done
 printf '%s\n' "$url" >> "$TEST_ROOT/urls"
 case $url in
-    https://github.com/nickspaargaren/herdr-dog/releases/download/v0.3.0/*) ;;
+    https://github.com/nickspaargaren/herdr-dog/releases/download/v0.4.0/*) ;;
     *) exit 9 ;;
 esac
 case $url in
@@ -138,7 +138,7 @@ esac
 					t.Fatalf("installed binary permissions: %v, %v", info, err)
 				}
 				urls := readFile(t, filepath.Join(root, "urls"))
-				if !strings.Contains(urls, "/v0.3.0/"+asset+"\n") || !strings.Contains(urls, "/v0.3.0/SHA256SUMS\n") {
+				if !strings.Contains(urls, "/v0.4.0/"+asset+"\n") || !strings.Contains(urls, "/v0.4.0/SHA256SUMS\n") {
 					t.Fatalf("unexpected release URLs: %s", urls)
 				}
 			}

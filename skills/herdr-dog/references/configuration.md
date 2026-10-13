@@ -1,6 +1,6 @@
 # Herdr Dog configuration and execution
 
-This reference describes the v0.3.0 implementation. It is bundled with the skill
+This reference describes the v0.4.0 implementation. It is bundled with the skill
 so agents can read it independently of the Dog source repository.
 
 ## Configuration location
