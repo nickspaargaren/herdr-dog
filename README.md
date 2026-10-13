@@ -33,6 +33,20 @@ The plugin works independently of where it is cloned or where Herdr is launched.
 To unregister a local link: `herdr plugin unlink herdr-dog`.
 To remove a managed installation: `herdr plugin uninstall herdr-dog`.
 
+## Agent skill
+
+The [Herdr Dog skill](skills/herdr-dog/SKILL.md) teaches coding agents how
+to configure setup, inspect failures, and recover using project commands.
+
+Install it globally to use across projects:
+
+```sh
+npx skills add nickspaargaren/herdr-dog --skill herdr-dog --global
+```
+
+Omit `--global` for a project-local installation. Installing the Herdr plugin and installing the agent skill are separate operations.
+
+
 ## Quick start
 
 Save this as `.herdr/worktrees.yml` in your project's main checkout:
