@@ -22,7 +22,7 @@ instructions, and uv-based skill validation in CI. Runtime behavior and the YAML
 format (`version: 1`) are unchanged.
 After merging and passing CI, publish `v0.3.0` using the steps below. Until its
 assets are published, developers can build and link source, and users can pin
-the previously published `v0.2.0` release.
+the previous published release.
 
 ## Release a new version
 
@@ -36,8 +36,8 @@ the previously published `v0.2.0` release.
    ```sh
    git switch main
    git pull --ff-only
-    git tag -a v0.3.0 -m "Herdr Dog v0.3.0"
-    git push origin v0.3.0
+   git tag -a v0.3.0 -m "Herdr Dog v0.3.0"
+   git push origin v0.3.0
    ```
 
 4. Watch **Release** in the repository's Actions tab. The workflow validates the
@@ -59,8 +59,8 @@ the previously published `v0.2.0` release.
    no Go toolchain:
 
    ```sh
-    gh release view v0.3.0
-    herdr plugin install nickspaargaren/herdr-dog --ref v0.3.0
+   gh release view v0.3.0
+   herdr plugin install nickspaargaren/herdr-dog --ref v0.3.0
    ```
 
    For a locally linked development plugin, use a separate verification machine
