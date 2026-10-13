@@ -1,6 +1,6 @@
 id = "herdr-dog"
 name = "Herdr Dog"
-version = "0.4.0"
+version = "0.3.1"
 min_herdr_version = "0.9.3"
 description = "Run project-defined setup commands after Herdr creates a worktree"
 platforms = ["linux", "macos"]
