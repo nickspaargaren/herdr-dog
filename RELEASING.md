@@ -15,18 +15,18 @@ or manual asset upload is required.
   selects the manifest's exact version, not GitHub's latest release.
 - Published versions and tags are immutable. Ship fixes as a new version.
 
-## Version 0.3.0
+## Version 0.3.1
 
-This release adds a portable Herdr Dog agent skill, skills.sh installation
-instructions, and uv-based skill validation in CI. Runtime behavior and the YAML
-format (`version: 1`) are unchanged.
-After merging and passing CI, publish `v0.3.0` using the steps below. Until its
+This release teaches the Herdr Dog agent skill to set up Herdr Dog for a project
+when asked, walking through findings with the user before writing configuration.
+Runtime behavior and the YAML format (`version: 1`) are unchanged.
+After merging and passing CI, publish `v0.3.1` using the steps below. Until its
 assets are published, developers can build and link source, and users can pin
 the previous published release.
 
 ## Release a new version
 
-1. Change `version` in `herdr-plugin.toml` (for example, `0.3.0`). Update relevant
+1. Change `version` in `herdr-plugin.toml` (for example, `0.3.1`). Update relevant
    docs and `min_herdr_version` if the required Herdr APIs changed.
 2. Open a PR and let CI pass: tests/vet/build on macOS and Linux, plus the four
    cross-compiled release binaries and their checksums. Merge the PR.
@@ -36,8 +36,8 @@ the previous published release.
    ```sh
    git switch main
    git pull --ff-only
-   git tag -a v0.3.0 -m "Herdr Dog v0.3.0"
-   git push origin v0.3.0
+   git tag -a v0.3.1 -m "Herdr Dog v0.3.1"
+   git push origin v0.3.1
    ```
 
 4. Watch **Release** in the repository's Actions tab. The workflow validates the
@@ -59,8 +59,8 @@ the previous published release.
    no Go toolchain:
 
    ```sh
-   gh release view v0.3.0
-   herdr plugin install nickspaargaren/herdr-dog --ref v0.3.0
+   gh release view v0.3.1
+   herdr plugin install nickspaargaren/herdr-dog --ref v0.3.1
    ```
 
    For a locally linked development plugin, use a separate verification machine
@@ -79,7 +79,7 @@ For packaging verification without publishing:
 ```sh
 go test ./...
 go vet ./...
-/bin/sh scripts/build-release v0.3.0
+/bin/sh scripts/build-release v0.3.1
 ```
 
 Use the version currently in the manifest, or omit the argument to select it.

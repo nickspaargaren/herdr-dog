@@ -1,6 +1,6 @@
 ---
 name: herdr-dog
-description: Configure and troubleshoot Herdr Dog worktree setup defined in .herdr/worktrees.yml. Use when writing setup steps, inspecting worktree setup failures, or recovering a local development environment prepared by Herdr Dog.
+description: Set up Herdr Dog for a project and troubleshoot worktree setup defined in .herdr/worktrees.yml. Use when asked to setup Herdr Dog, write setup steps, inspect setup failures, or recover a local development environment prepared by Herdr Dog.
 license: MIT
 compatibility: Requires Git 2.36+, macOS or Linux, and shell command execution. Automatic setup requires Herdr 0.9.3+.
 metadata:
@@ -12,6 +12,17 @@ metadata:
 Herdr Dog runs project setup commands after Herdr creates a Git worktree.
 The project chooses dependency installation, services, databases, migrations,
 seeding, terminal layout, and application readiness checks. Dog executes the steps.
+
+## Set up a project
+
+When asked to "setup Herdr Dog":
+
+1. Inspect project instructions, manifests, lockfiles, and development docs.
+2. Check existing Dog configuration in the current and main checkouts.
+3. Discover the project's install, service, migration, seed, and startup commands.
+4. Walk through the findings with the user and confirm which setup steps they want.
+5. Create or update `.herdr/worktrees.yml` with small, named steps reflecting those choices.
+6. Verify supported commands and report what was actually tested.
 
 ## Inspect the current checkout
 
